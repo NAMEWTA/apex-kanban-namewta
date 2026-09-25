@@ -1,0 +1,36 @@
+/** Notice */
+export const messages = {
+	en: {
+		'notice.memoSaved': 'Saved memo as note: {path}',
+		'notice.memoSaveError': 'Failed to save memo as note',
+		'notice.tasksSavedToDaily': 'Saved tasks to {path}',
+		'notice.noTasksToSave': 'This card has no tasks to save',
+		'notice.dailySaveError': 'Failed to save tasks to daily note',
+		'notice.dailyNotesDisabled': 'Enable Obsidian core "Daily notes" plugin and set its folder/format first',
+		'notice.archiveEmpty': 'No completed tasks to archive',
+		'notice.archiveConfirm': 'Archive {count} completed task(s)? They will be removed from the board.',
+		'notice.archiveLine': '- {time} ✓ Completed "{task}" ({card})',
+		'notice.archived': 'Archived {count} task(s) to {path}',
+		'notice.archiveDailyUnavailable':
+			'Could not resolve the daily note (check the core Daily notes plugin settings), so nothing was archived',
+		'notice.archiveError': 'Failed to archive tasks',
+		'notice.memoUntitled': 'Untitled',
+		'notice.memoTemplateNotFound': 'Memo template not found — used the default template.',
+	},
+	zh: {
+		'notice.memoSaved': '备忘录已保存为笔记：{path}',
+		'notice.memoSaveError': '备忘录保存为笔记失败',
+		'notice.tasksSavedToDaily': '已保存待办到：{path}',
+		'notice.noTasksToSave': '这张卡片没有可保存的待办',
+		'notice.dailySaveError': '保存待办到日记失败',
+		'notice.dailyNotesDisabled': '请先启用 Obsidian 核心「日记」插件并配置文件夹/日期格式',
+		'notice.archiveEmpty': '没有可归档的已完成事项',
+		'notice.archiveConfirm': '将归档 {count} 条已完成事项并从看板移除？',
+		'notice.archiveLine': '- {time} ✓ 完成「{task}」({card})',
+		'notice.archived': '已归档 {count} 条事项到：{path}',
+		'notice.archiveDailyUnavailable': '无法定位当天日记（请检查核心「日记」插件的设置），未执行归档',
+		'notice.archiveError': '归档失败',
+		'notice.memoUntitled': '未命名',
+		'notice.memoTemplateNotFound': '未找到备忘录模板，已使用默认模板。',
+	},
+};

@@ -1,0 +1,182 @@
+import { strict as assert } from 'node:assert';
+import { TFile, type App } from 'obsidian';
+import { insertTaskForDay, type TaskInsertTarget } from '../src/dashboard-view/calendar/daily-notes';
+
+// In-memory vault + core daily-notes plugin mock. TFile instances come from
+// the alias stub, so the `instanceof TFile` checks inside daily-notes see the
+// same class this file constructs.
+interface MemFile extends TFile {
+	path: string;
+}
+
+function makeApp(
+	files: Record<string, string>,
+	opts: { dailyNotes?: boolean; folder?: string } = {},
+): {
+	app: App;
+	store: Map<string, string>;
+} {
+	const store = new Map(Object.entries(files));
+	const fileOf = (path: string): MemFile => Object.assign(new TFile(), { path }) as MemFile;
+	const app = {
+		vault: {
+			adapter: {
+				exists: async (p: string) => store.has(p),
+				mkdir: async () => {},
+			},
+			getAbstractFileByPath: (p: string) => (store.has(p) ? fileOf(p) : null),
+			getFileByPath: (p: string) => (store.has(p) ? fileOf(p) : null),
+			read: async (f: MemFile) => store.get(f.path) ?? '',
+			modify: async (f: MemFile, c: string) => {
+				store.set(f.path, c);
+			},
+			create: async (p: string, c: string) => {
+				store.set(p, c);
+				return fileOf(p);
+			},
+		},
+		internalPlugins: {
+			getPluginById: (id: string) =>
+				id === 'daily-notes' && opts.dailyNotes !== false
+					? { enabled: true, instance: { options: { folder: opts.folder ?? 'daily', format: 'YYYY-MM-DD' } } }
+					: undefined,
+		},
+	};
+	return { app: app as unknown as App, store };
+}
+
+const isoOf = (d: Date): string =>
+	`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+async function main(): Promise<void> {
+	const todayIso = isoOf(new Date());
+	const futureIso = isoOf(new Date(Date.now() + 7 * 86400000));
+	const todayPath = `daily/${todayIso}.md`;
+	const futurePath = `daily/${futureIso}.md`;
+
+	const FRONTMATTER_NOTE = '---\ntags: daily\n---\n\nExisting line\n';
+
+	// 1. Clicked a future day while today's note exists, but that day has no
+	//    note yet -> create THAT day's note (top). Today's note stays untouched.
+	{
+		const { app, store } = makeApp({ [todayPath]: FRONTMATTER_NOTE });
+		const line = `- [ ] Future task 📅 ${futureIso}`;
+		const target = await insertTaskForDay(app, futureIso, line, 'Dashboard/dashboard', 'start');
+		assert.equal(target?.kind, 'daily-top', '1: kind');
+		assert.equal(target?.file.path, futurePath, "1: lands in the selected day's note");
+		assert.equal(target?.line, 0, '1: inserted at the top of the new note');
+		assert.ok(store.get(futurePath)!.includes(line), '1: marker line written');
+		assert.equal(store.get(todayPath), FRONTMATTER_NOTE, "1: today's note untouched");
+	}
+
+	// 2. Same, position 'end' -> created day's note, task at the bottom.
+	{
+		const { app, store } = makeApp({ [todayPath]: 'Existing line\n' });
+		const line = `- [ ] Future task ⏰ ${futureIso} 14:30`;
+		const target = await insertTaskForDay(app, futureIso, line, 'Dashboard/dashboard', 'end');
+		assert.equal(target?.kind, 'daily-end', '2: kind');
+		assert.equal(target?.file.path, futurePath, "2: lands in the selected day's note");
+		const lines = store.get(futurePath)!.split('\n');
+		assert.equal(lines[lines.length - 2], line, '2: last content line is the task');
+		assert.equal(store.get(todayPath), 'Existing line\n', "2: today's note untouched");
+	}
+
+	// 3. Future day, no note yet, dashboard file exists -> still the day's note,
+	//    not the dashboard list.
+	{
+		const { app, store } = makeApp({ 'Dashboard/dashboard.md': '- [ ] Existing\n- [ ] Other\n' });
+		const line = `- [ ] Future task 📅 ${futureIso}`;
+		const target = await insertTaskForDay(app, futureIso, line, 'Dashboard/dashboard', 'start');
+		assert.equal(target?.kind, 'daily-top', '3: kind');
+		assert.equal(target?.file.path, futurePath, "3: selected day's note");
+		assert.ok(store.get(futurePath)!.includes(line), '3: line in the new daily note');
+		assert.ok(!store.get('Dashboard/dashboard.md')!.includes('Future task'), '3: dashboard untouched');
+	}
+
+	// 4. Clicked today itself, note exists -> today's note as before.
+	{
+		const { app } = makeApp({ [todayPath]: 'Existing line\n' });
+		const target = await insertTaskForDay(app, todayIso, '- [ ] Today task', 'Dashboard/dashboard', 'start');
+		assert.equal(target?.kind, 'daily-top', '4: kind');
+		assert.equal(target?.file.path, todayPath, "4: today's note");
+	}
+
+	// 5. Clicked a future day that DOES have a note -> that day's note wins (kept).
+	{
+		const { app, store } = makeApp({ [futurePath]: 'Pre-seeded travel note\n', [todayPath]: 'Today\n' });
+		const line = `- [ ] Trip task 📅 ${futureIso}`;
+		const target = await insertTaskForDay(app, futureIso, line, 'Dashboard/dashboard', 'start');
+		assert.equal(target?.file.path, futurePath, "5: clicked day's own note wins");
+		assert.ok(store.get(futurePath)!.includes(line), '5: line in future note');
+		assert.ok(!store.get(todayPath)!.includes('Trip task'), "5: today's note untouched");
+	}
+
+	// 6. Daily Notes plugin disabled -> null, even if a dashboard file exists.
+	//    There is no day path to create without the core plugin's folder/format.
+	{
+		const { app, store } = makeApp({ 'Dashboard/dashboard.md': '- [ ] Existing\n' }, { dailyNotes: false });
+		const target = await insertTaskForDay(app, futureIso, '- [ ] task', 'Dashboard/dashboard', 'start');
+		assert.equal(target, null, '6: null');
+		assert.equal(store.get('Dashboard/dashboard.md'), '- [ ] Existing\n', '6: dashboard untouched');
+	}
+
+	// 7. Daily Notes plugin disabled AND no dashboard -> null (caller shows hint).
+	{
+		const { app } = makeApp({}, { dailyNotes: false });
+		const target = await insertTaskForDay(app, futureIso, '- [ ] task', '', 'start');
+		assert.equal(target, null, '7: null');
+	}
+
+	// 8. Nothing anywhere -> creates the clicked day's note and inserts the task.
+	{
+		const { app, store } = makeApp({}, { folder: 'daily' });
+		const line = `- [ ] Lonely task 📅 ${futureIso}`;
+		const target = await insertTaskForDay(app, futureIso, line, 'missing/dashboard', 'start');
+		assert.equal(target?.kind, 'daily-top', '8: kind');
+		assert.equal(target?.file.path, futurePath, "8: created the clicked day's note");
+		assert.ok(store.get(futurePath)!.includes(line), '8: line in created note');
+	}
+
+	// 9. Custom FILE target overrides the whole chain: today's daily note
+	//    exists, but the task lands in the pinned file per position.
+	{
+		const { app, store } = makeApp({ [todayPath]: 'x\n', 'Notes/tasks.md': '---\ntype: tasks\n---\n\nExisting\n' });
+		const line = '- [ ] pinned';
+		const target = await insertTaskForDay(app, todayIso, line, 'Dashboard/dashboard', 'start', {
+			kind: 'file',
+			path: 'Notes/tasks',
+		});
+		assert.equal(target?.file.path, 'Notes/tasks.md', '9: lands in pinned file (.md appended)');
+		const out = store.get('Notes/tasks.md')!;
+		assert.ok(out.includes(line) && out.indexOf(line) < out.indexOf('Existing'), '9: start position');
+	}
+
+	// 10. Custom FOLDER target: one note per day named YYYY-MM-DD, created on
+	//     the first task, appended on the second (end position).
+	{
+		const { app, store } = makeApp({ [todayPath]: 'x\n' });
+		const t1 = await insertTaskForDay(app, futureIso, '- [ ] first', undefined, 'end', {
+			kind: 'folder',
+			path: 'Tasks',
+		});
+		assert.equal(t1?.file.path, `Tasks/${futureIso}.md`, '10a: created day note in folder');
+		await insertTaskForDay(app, futureIso, '- [ ] second', undefined, 'end', { kind: 'folder', path: 'Tasks' });
+		const out = store.get(`Tasks/${futureIso}.md`)!;
+		assert.ok(
+			out.includes('- [ ] first') && out.indexOf('- [ ] first') < out.indexOf('- [ ] second'),
+			'10b: appended after first',
+		);
+	}
+
+	// Sanity: returned targets always describe the written line.
+	{
+		const { app } = makeApp({ [todayPath]: 'x\n' });
+		const target: TaskInsertTarget | null = await insertTaskForDay(app, todayIso, '- [ ] y', undefined, 'end');
+		if (!target) throw new Error('sanity: expected a target');
+		assert.equal(target.writtenLine, '- [ ] y', 'sanity: writtenLine');
+	}
+
+	console.log('verify-calendar-task-insert: 10 scenarios + sanity OK');
+}
+
+void main();

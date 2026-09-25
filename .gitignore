@@ -1,0 +1,26 @@
+# Dependencies
+node_modules
+package-lock.json
+
+# Obsidian plugin data
+data.json
+
+# macOS
+.DS_Store
+
+# Local registry auth
+.npmrc
+
+# Build artifacts
+*.map
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# AI / Dev helpers
+AGENTS.md
+300句经典句子.md
+# DQL test fixtures (local only)
+dataview-test/

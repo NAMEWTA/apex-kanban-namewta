@@ -1,0 +1,21 @@
+NAND
+Copyright (c) 2026 NAMEWTA
+
+This project is a derivative of apex-dashboard:
+Copyright (c) 2025 PandoraReads
+https://github.com/PandoraReads/apex-dashboard
+The dashboard portions are available under the MIT License.
+
+Terminal host derived from Termy
+Copyright (c) ZyphrZero
+https://github.com/ZyphrZero/Termy
+Licensed under the GNU General Public License v3.0.
+
+Agent launch, permission flags, and local usage ideas derived from Orca
+Copyright (c) Lovecast Inc.
+https://github.com/stablyai/orca
+Licensed under the MIT License.
+
+Because this plugin includes Termy-derived code, the combined work is
+distributed under the GNU General Public License v3.0. See LICENSE.
+The Termy code is not relicensed as MIT.

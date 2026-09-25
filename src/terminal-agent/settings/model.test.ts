@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  CODEX_LAUNCH_COMMAND,
+  DEFAULT_PRESET_SCRIPTS,
+  OPENCODE_LAUNCH_COMMAND,
+  isContextAwarePresetScript,
+} from './model.ts';
+
+test('Codex built-in launcher starts Codex without prompt injection', () => {
+  const codex = DEFAULT_PRESET_SCRIPTS.find((script) => script.id === 'codex');
+  const launchAction = codex?.actions.find((action) => action.id === 'action-codex');
+
+  assert.equal(CODEX_LAUNCH_COMMAND, 'codex');
+  assert.equal(launchAction?.value, CODEX_LAUNCH_COMMAND);
+});
+
+test('OpenCode built-in launcher starts the IDE bridge client directly', () => {
+  const openCode = DEFAULT_PRESET_SCRIPTS.find((script) => script.id === 'opencode');
+  const launchAction = openCode?.actions.find((action) => action.id === 'action-opencode');
+
+  assert.equal(OPENCODE_LAUNCH_COMMAND, 'opencode');
+  assert.equal(launchAction?.value, OPENCODE_LAUNCH_COMMAND);
+});
+
+test('built-in workflow order keeps the coding agents from the shared catalog', () => {
+  assert.deepEqual(
+    DEFAULT_PRESET_SCRIPTS.map((script) => script.id),
+    ['claude-code', 'codex', 'grok', 'opencode', 'gemini', 'qwen-code', 'kimi', 'antigravity', 'minimax'],
+  );
+
+  assert.equal(DEFAULT_PRESET_SCRIPTS[3]?.id, 'opencode');
+});
+
+test('built-in context-aware workflow marker covers all built-ins', () => {
+  const contextAwareIds = DEFAULT_PRESET_SCRIPTS
+    .filter((script) => isContextAwarePresetScript(script))
+    .map((script) => script.id);
+
+  assert.deepEqual(contextAwareIds, ['claude-code', 'codex', 'opencode']);
+});

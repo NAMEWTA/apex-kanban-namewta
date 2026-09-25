@@ -1,0 +1,31 @@
+/** Main */
+export const messages = {
+	en: {
+		'main.openDashboard': 'Open dashboard',
+		'main.dashboard': 'Dashboard',
+		'main.cycleTheme': 'Cycle to next theme',
+		'main.addSection': 'Add new section',
+		'main.toggleNotePopover': 'Toggle: open notes directly in a tab',
+		'main.notePopoverOff': 'Notes open directly in a tab (popover off)',
+		'main.notePopoverOn': 'Notes open in the dashboard popover',
+		'main.toggleBannerMode': 'Toggle banner view (poster & quotes / statistics)',
+		'main.bannerModeQuote': 'Banner switched to poster & quotes',
+		'main.bannerModeStats': 'Banner switched to statistics',
+		'main.nextWorkspace': 'Switch to next workspace',
+		'main.prevWorkspace': 'Switch to previous workspace',
+	},
+	zh: {
+		'main.openDashboard': '打开工作台',
+		'main.dashboard': '工作台',
+		'main.cycleTheme': '切换到下一个主题',
+		'main.addSection': '添加新分区',
+		'main.toggleNotePopover': '切换：直接在标签页打开笔记',
+		'main.notePopoverOff': '笔记直接在标签页打开（已关闭弹窗）',
+		'main.notePopoverOn': '笔记在仪表盘弹窗中打开',
+		'main.toggleBannerMode': '切换横幅视图（海报名言 / 数据统计）',
+		'main.bannerModeQuote': '横幅已切换为：海报与名言',
+		'main.bannerModeStats': '横幅已切换为：数据统计',
+		'main.nextWorkspace': '切换到下一个工作台',
+		'main.prevWorkspace': '切换到上一个工作台',
+	},
+};

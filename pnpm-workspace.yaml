@@ -1,0 +1,8 @@
+allowBuilds:
+  esbuild: true
+
+peerDependencyRules:
+  allowedVersions:
+    "@xterm/xterm": "6"
+    obsidian: "1.13.1"
+

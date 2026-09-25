@@ -1,0 +1,43 @@
+# Rust terminal server
+[package]
+name = "rust-terminal-servers"
+version = "1.0.0"
+edition = "2021"
+description = "PTY server for the Vault Agents Obsidian plugin"
+
+[[bin]]
+name = "rust-terminal-servers"
+path = "src/main.rs"
+
+[dependencies]
+# PTY support
+portable-pty = "0.9"
+which = "6.0"
+
+# Async runtime
+tokio = { version = "1", features = ["rt", "net", "sync", "signal", "macros", "time"] }
+
+# WebSocket
+tokio-tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
+futures-util = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+
+# Async trait support
+async-trait = "0.1"
+
+# UUID generation
+uuid = { version = "1.0", features = ["v4"] }
+
+# Shared release profile configuration
+[profile.release]
+opt-level = 3       # Optimize for speed rather than size
+lto = "thin"        # Use thin LTO to balance compile time and runtime performance
+codegen-units = 1   # Improve optimization quality
+strip = true        # Strip the symbol table
+panic = "abort"     # Reduce binary size
