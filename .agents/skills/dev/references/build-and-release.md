@@ -34,7 +34,7 @@ Do not add a second entry. Do not bundle CodeMirror.
 
 ## Tests
 
-There is no aggregate test script. CI (`.github/workflows/lint.yml`) runs `build` and `lint` on Node 20 and 22 for every branch push. It does not run `test:*`. There is no Obsidian runtime in CI. Name the script you ran; a passing `build` does not verify UI.
+There is no aggregate test script. CI (`.github/workflows/lint.yml`) runs `build` and `lint` on Node 22 and 24 for every branch push. pnpm 11 needs Node 22.13 or newer, so the release workflow uses Node 22 as well. It does not run `test:*`. There is no Obsidian runtime in CI. Name the script you ran; a passing `build` does not verify UI.
 
 A `*.test.ts` file runs only when a `package.json` script names it. `scripts/verify-*.ts` files are wired as `test:<name>`:
 
