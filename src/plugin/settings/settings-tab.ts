@@ -20,15 +20,16 @@ import { App, Platform, PluginSettingTab, setIcon, Setting, type SettingDefiniti
 import type DashboardPlugin from '../main';
 import type { DashboardSettings, CountdownConfig, AlbumConfig, AnniversaryConfig } from '../../dashboard-view/types';
 import { t } from '../../shared/i18n';
-import { renderTerminalAgentSettings, type TerminalSettingsSection } from '../../terminal-agent';
+import { renderStackedTerminalAgentSettings } from '../../terminal-agent/settings/sections';
 import { renderHomeSettings } from './home';
-import { defaultPage, productOrder, sidePages, type SettingsPage, type SettingsProduct } from './nav';
+import { terminalMenuLabels } from './connection-menu';
+import { defaultPage, sidePages, visibleProducts, type SettingsPage, type SettingsProduct } from './nav';
 
 export type { DashboardSettings };
 
 /** Settings pages, shared by the declarative (1.13+) navigable
- *  definitions and the pre-1.13 fallback. Primary row on top, secondary
- *  list on the left. */
+ *  definitions and the pre-1.13 fallback. One product row on top.
+ *  Each product stacks its sections on that tab. */
 
 export class DashboardSettingTab extends PluginSettingTab {
 	declare renderGeneralSettings: (containerEl: HTMLElement) => void;
@@ -103,7 +104,7 @@ export class DashboardSettingTab extends PluginSettingTab {
 		const onProduct = (product: SettingsProduct, page: SettingsPage) => (setting: Setting) => {
 			setting.settingEl.dataset.settingsProduct = product;
 			setting.settingEl.dataset.settingsPage = page;
-			const hidden = this.activeProduct !== product || this.activePage !== page;
+			const hidden = this.activeProduct !== product;
 			setting.settingEl.toggleClass('dashboard-settings-page-hidden', hidden);
 		};
 		return [
@@ -314,24 +315,25 @@ export class DashboardSettingTab extends PluginSettingTab {
 			terminal: t('settings.productTerminal'),
 			sync: t('settings.productSync'),
 		};
-		return productOrder().map((key) => ({ key, label: labels[key], icon: icons[key] }));
+		return visibleProducts(this.plugin.settings.modules).map((key) => ({ key, label: labels[key], icon: icons[key] }));
 	}
 
 	sectionTabs(): Array<{ key: SettingsPage; label: string; icon: string }> {
+		const terminalLabels = terminalMenuLabels();
 		const meta: Partial<Record<SettingsPage, { label: string; icon: string }>> = {
 			general: { label: t('settings.tabGeneral'), icon: 'settings' },
 			widgets: { label: t('settings.tabWidgets'), icon: 'layout-grid' },
 			coffee: { label: t('settings.tabAbout'), icon: 'user-round' },
 			comments: { label: t('editor.comments.title'), icon: 'message-square' },
 			copy: { label: t('editor.copy.title'), icon: 'copy' },
-			shell: { label: t('terminalAgent.settingsDetails.terminal.shellSettings'), icon: 'square-terminal' },
-			instance: { label: t('terminalAgent.settingsDetails.terminal.instanceBehavior'), icon: 'columns-2' },
-			workflows: { label: t('terminalAgent.settingsDetails.terminal.presetScripts'), icon: 'list-tree' },
-			appearance: { label: t('terminalAgent.settingsDetails.terminal.displaySettings'), icon: 'palette' },
-			behavior: { label: t('terminalAgent.settingsDetails.terminal.behaviorSettings'), icon: 'sliders-horizontal' },
-			connection: { label: t('terminalAgent.settingsDetails.terminal.serverConnection'), icon: 'cable' },
-			visibility: { label: t('terminalAgent.visibility.visibilitySettings'), icon: 'eye' },
-			agents: { label: t('settings.productTerminal'), icon: 'bot' },
+			shell: { label: terminalLabels.shell, icon: 'square-terminal' },
+			instance: { label: terminalLabels.instance, icon: 'columns-2' },
+			workflows: { label: terminalLabels.workflows, icon: 'list-tree' },
+			appearance: { label: terminalLabels.appearance, icon: 'palette' },
+			behavior: { label: terminalLabels.behavior, icon: 'sliders-horizontal' },
+			connection: { label: terminalLabels.connection, icon: 'cable' },
+			visibility: { label: terminalLabels.visibility, icon: 'eye' },
+			agents: { label: terminalLabels.agents, icon: 'bot' },
 		};
 		return sidePages(this.activeProduct).flatMap((key) => {
 			const item = meta[key];
@@ -360,23 +362,6 @@ export class DashboardSettingTab extends PluginSettingTab {
 				this.refresh();
 			});
 		}
-		const sections = this.sectionTabs();
-		const layout = host.closest('.nand-settings, .dashboard-settings-root');
-		layout?.toggleClass('nand-settings-split', sections.length > 0);
-		if (sections.length === 0) return;
-		const side = shell.createDiv({ cls: 'dashboard-settings-sidenav' });
-		for (const tab of sections) {
-			const btn = side.createDiv({
-				cls: 'dashboard-settings-tab' + (tab.key === this.activePage ? ' active' : ''),
-			});
-			setIcon(btn.createSpan({ cls: 'dashboard-settings-tab-icon' }), tab.icon);
-			btn.createSpan({ text: tab.label });
-			btn.addEventListener('click', () => {
-				if (this.activePage === tab.key) return;
-				this.activePage = tab.key;
-				this.refresh();
-			});
-		}
 	}
 
 	renderTerminalProduct(host: HTMLElement): void {
@@ -384,9 +369,7 @@ export class DashboardSettingTab extends PluginSettingTab {
 			host.createEl('p', { text: t('settings.terminalDesktopOnly') });
 			return;
 		}
-		const section = this.activePage;
-		if (!isTerminalSection(section)) return;
-		renderTerminalAgentSettings(host, this.plugin.terminalHost, section);
+		renderStackedTerminalAgentSettings(host, this.plugin.terminalHost);
 	}
 
 	/** Fallback renderer for Obsidian < 1.13 (declarative API absent). */
@@ -412,31 +395,24 @@ export class DashboardSettingTab extends PluginSettingTab {
 			return;
 		}
 		if (this.activeProduct === 'editor') {
-			if (this.activePage === 'copy') {
-				new Setting(host).setName(t('editor.copy.title')).setDesc(t('editor.copy.desc')).setHeading();
-			} else {
-				this.renderEditorSettings(host);
-			}
+			this.renderEditorSettings(host);
+			new Setting(host).setName(t('editor.copy.title')).setDesc(t('editor.copy.desc')).setHeading();
 			return;
 		}
 		if (this.activeProduct === 'terminal') {
 			this.renderTerminalProduct(host);
 			return;
 		}
-		if (this.activePage === 'general') {
-			this.renderGeneralSettings(host);
-			this.renderServiceSettings(host);
-		} else if (this.activePage === 'widgets') {
-			this.renderWeatherSettings(host);
-			this.renderCalendarSettings(host);
-			this.renderWidgetSettings(host);
-			this.renderLunarSettings(host);
-			this.renderYearProgressSettings(host);
-			this.renderAlbumSettings(host);
-			this.renderAnniversarySettings(host);
-		} else {
-			this.renderCoffeeSettings(host);
-		}
+		this.renderGeneralSettings(host);
+		this.renderServiceSettings(host);
+		this.renderWeatherSettings(host);
+		this.renderCalendarSettings(host);
+		this.renderWidgetSettings(host);
+		this.renderLunarSettings(host);
+		this.renderYearProgressSettings(host);
+		this.renderAlbumSettings(host);
+		this.renderAnniversarySettings(host);
+		this.renderCoffeeSettings(host);
 	}
 
 	/** Redraw when the sections themselves change (a widget toggled on/off,
@@ -481,15 +457,3 @@ DashboardSettingTab.prototype.renderSyncSettings = renderSyncSettings;
 DashboardSettingTab.prototype.renderCoffeeSettings = renderCoffeeSettings;
 DashboardSettingTab.prototype.renderHomeSettings = renderHomeSettings;
 DashboardSettingTab.prototype.renderWidgetBackgroundSetting = renderWidgetBackgroundSetting;
-function isTerminalSection(page: SettingsPage): page is TerminalSettingsSection {
-	return (
-		page === 'shell' ||
-		page === 'instance' ||
-		page === 'workflows' ||
-		page === 'appearance' ||
-		page === 'behavior' ||
-		page === 'connection' ||
-		page === 'visibility' ||
-		page === 'agents'
-	);
-}

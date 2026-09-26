@@ -10,7 +10,7 @@ One plugin process, several products. The shell at the entry in the SKILL identi
 |---|---|---|
 | Dashboard | `src/dashboard-view` | Barrel exports `DashboardView`, `DASHBOARD_VIEW_TYPE`, `showModuleDisabled`. The shell also deep-imports services, the workspace registry, and settings modals |
 | Editor | `src/editor-view` | Barrel exports `EditorView`, `EDITOR_VIEW_TYPE`, `createEditorHost`, `EditorHost`, `collectReferences` |
-| Terminal | `src/terminal-agent` | Barrel exports `TerminalAgentController`, `TerminalView`, `TERMINAL_VIEW_TYPE`, `renderTerminalAgentSettings`, `readLegacyTerminalSettings` |
+| Terminal | `src/terminal-agent` | Barrel exports `TerminalAgentController`, `TerminalView`, `TERMINAL_VIEW_TYPE`, `renderStackedTerminalAgentSettings`, `renderTerminalAgentSettings`, `readLegacyTerminalSettings`. Settings deep-imports `renderStackedTerminalAgentSettings` from `settings/sections` |
 | Sync | `src/sync` | `export {}` plus `README.md`. No view type yet |
 
 `src/dashboard-view/persist` writes the dashboard markdown. Leave the directory name `sync` free.
@@ -97,15 +97,15 @@ Registration details that apply to every command are SKILL rule 9.
 
 `DashboardSettingTab` is the only settings tab. Page ids come from `src/plugin/settings/nav.ts`:
 
-| Product | Side pages | Default |
+| Product | Sections stacked on that tab | Default |
 |---|---|---|
-| `home` | none. Toggles dashboard, editor, and terminal. Sync is a label here, not a toggle | `home` |
-| `dashboard` | `general`, `widgets`, `coffee` | `general` |
-| `editor` | `comments`, `copy` | `comments` |
-| `terminal` | `shell`, `instance`, `workflows`, `appearance`, `behavior`, `connection`, `visibility`, `agents` | `shell` |
-| `sync` | none. One placeholder row from `renderSyncSettings` | `sync` |
+| `home` | none. Toggles dashboard, editor, and terminal. Sync is a label here, not a toggle. Home is always a top tab | `home` |
+| `dashboard` | `general`, `widgets`, `coffee`. The top tab is hidden while the module is off | `general` |
+| `editor` | `comments`, `copy`. The top tab is hidden while the module is off | `comments` |
+| `terminal` | `shell`, `instance`, `workflows`, `appearance`, `behavior`, `connection`, `visibility`, `agents`. The top tab is hidden while the module is off | `shell` |
+| `sync` | none. One placeholder row from `renderSyncSettings`. Sync is always a top tab and is not a home toggle | `sync` |
 
-The side list is vertical. `coffee` is the about screen; the page id stays `coffee`. How a row is rendered in both the declarative list and the fallback is `references/obsidian-api.md`. Editor highlight and popover toggles call `editorHost.notifySettingsChanged()`. The default domain dropdown calls `notifyLayoutChanged()`.
+There is no left-hand page list. `visibleProducts` in `nav.ts` is the top row. `coffee` is the about screen; the page id stays `coffee`. How a row is rendered in both the declarative list and the fallback is `references/obsidian-api.md`. Editor highlight and popover toggles call `editorHost.notifySettingsChanged()`. The default domain dropdown calls `notifyLayoutChanged()`.
 
 ## i18n
 

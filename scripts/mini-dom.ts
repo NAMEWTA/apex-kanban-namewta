@@ -69,6 +69,27 @@ export class El {
 		return this.parent;
 	}
 
+	get nextSibling(): El | null {
+		if (!this.parent) return null;
+		const index = this.parent.children.indexOf(this);
+		return this.parent.children[index + 1] ?? null;
+	}
+
+	insertBefore(child: El, before: El | null): El {
+		if (child.parent) {
+			child.parent.children = child.parent.children.filter((item) => item !== child);
+		}
+		child.parent = this;
+		if (!before) {
+			this.children.push(child);
+			return child;
+		}
+		const index = this.children.indexOf(before);
+		if (index < 0) this.children.push(child);
+		else this.children.splice(index, 0, child);
+		return child;
+	}
+
 	/** True when `node` is this element or a descendant (real-DOM parity). */
 	contains(node: El | null): boolean {
 		let cur: El | null = node;
@@ -103,8 +124,16 @@ export class El {
 		this.attrs.set(name, value);
 	}
 
+	setAttr(name: string, value: string): void {
+		this.setAttribute(name, value);
+	}
+
 	getAttribute(name: string): string | null {
 		return this.attrs.get(name) ?? null;
+	}
+
+	removeAttribute(name: string): void {
+		this.attrs.delete(name);
 	}
 
 	/** DOM-style dataset: camelCase keys map to/from data-* attributes. */

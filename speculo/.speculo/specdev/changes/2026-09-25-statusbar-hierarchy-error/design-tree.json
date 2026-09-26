@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "artifact": "design-tree",
+  "change": "2026-09-25-statusbar-hierarchy-error",
+  "status": "consensus",
+  "round": 2,
+  "nodes": [
+    {
+      "id": "D-001",
+      "title": "状态栏初始化失败是否隔离",
+      "question": "修正把 span 挂到 document 上的调用之后，如果状态栏初始化将来再次抛错，插件加载应该继续完成，还是仍然中断？",
+      "depends_on": [],
+      "recommendation": "只修正父节点，不额外隔离异常。来源期望是状态栏入口存在，而且这次 HierarchyRequestError 消失。捕获异常会把入口缺失变成静默降级，来源没有要求这种降级。",
+      "status": "answered",
+      "round": 2,
+      "answer": "只修正父节点。状态栏图标和 NAND 文字创建在状态栏项上。不隔离 initStatusBar 的异常；将来再抛错时，首次启用仍会中断插件 onload。",
+      "log_ref": "LOG-002"
+    }
+  ]
+}

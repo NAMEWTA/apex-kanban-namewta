@@ -1,0 +1,19 @@
+{
+  "schema_version": 5,
+  "workflow": "specdev",
+  "active": [
+    {
+      "change": "2026-09-25-statusbar-hierarchy-error"
+    },
+    {
+      "change": "2026-09-25-settings-narrow-column"
+    },
+    {
+      "change": "2026-09-25-terminal-connection-i18n"
+    },
+    {
+      "change": "2026-09-25-three-issue-plan"
+    }
+  ],
+  "archived": []
+}

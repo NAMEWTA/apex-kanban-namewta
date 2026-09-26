@@ -1805,32 +1805,14 @@
 	max-width: 100%;
 }
 
-.dashboard-settings-sidenav {
-	display: flex;
-	flex-direction: column;
-	flex: 0 0 168px;
-	gap: 2px;
-	min-width: 0;
-	grid-column: 1;
-	position: sticky;
-	top: 8px;
-}
-
-.dashboard-settings-sidenav .dashboard-settings-tab {
-	width: 100%;
-	justify-content: flex-start;
-}
-
 .dashboard-settings-content {
 	flex: 1 1 auto;
 	min-width: 0;
 }
 
 .nand-settings {
-	display: grid;
-	grid-template-columns: 180px minmax(0, 1fr);
-	column-gap: 16px;
-	align-items: start;
+	display: block;
+	min-width: 0;
 }
 
 .nand-settings .nand-settings-chrome,
@@ -1842,62 +1824,9 @@
 	grid-column: 1 / -1;
 }
 
-.nand-settings .dashboard-settings-sidenav {
-	grid-column: 1;
-}
-
 .nand-settings > .setting-item.dashboard-settings-section:not(.nand-settings-chrome):not(.dashboard-settings-page-hidden) {
 	grid-column: 1 / -1;
 	min-width: 0;
-}
-
-.nand-settings.nand-settings-split > .setting-item.dashboard-settings-section:not(.nand-settings-chrome):not(.dashboard-settings-page-hidden) {
-	grid-column: 2;
-}
-
-.dashboard-settings-root.nand-settings-split {
-	display: grid;
-	grid-template-columns: 180px minmax(0, 1fr);
-	column-gap: 16px;
-	align-items: start;
-}
-
-.dashboard-settings-root.nand-settings-split .dashboard-settings-shell {
-	display: contents;
-}
-
-.dashboard-settings-root.nand-settings-split .dashboard-settings-products,
-.dashboard-settings-root.nand-settings-split > :first-child {
-	grid-column: 1 / -1;
-}
-
-.dashboard-settings-root.nand-settings-split .dashboard-settings-content {
-	grid-column: 2;
-	min-width: 0;
-}
-
-@media (max-width: 520px) {
-	.nand-settings {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.nand-settings,
-	.dashboard-settings-root.nand-settings-split {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.nand-settings .dashboard-settings-sidenav,
-	.nand-settings.nand-settings-split > .setting-item.dashboard-settings-section:not(.nand-settings-chrome):not(.dashboard-settings-page-hidden),
-	.dashboard-settings-root.nand-settings-split .dashboard-settings-content {
-		grid-column: 1;
-		position: static;
-		flex: none;
-		width: 100%;
-	}
-
-	.dashboard-settings-sidenav {
-		flex-direction: column;
-	}
 }
 
 .dashboard-settings-tab {
@@ -23823,6 +23752,9 @@ body.is-mobile .dashboard-media-item .dashboard-media-tagbtn { opacity: 1; }
 .terminal-display-tab-content {
   display: flex;
   flex-direction: column;
+}
+.terminal-display-tab-pane.is-hidden {
+  display: none;
 }
 
 /* ==================== Terminal Context Menu ==================== */

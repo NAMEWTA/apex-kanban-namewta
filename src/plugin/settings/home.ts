@@ -19,6 +19,11 @@ export function renderHomeSettings(this: DashboardSettingTab, containerEl: HTMLE
 					this.plugin.settings.modules = { ...this.plugin.settings.modules, [row.key]: value };
 					await this.plugin.saveSettings();
 					await this.plugin.applyModuleFlags();
+					if (this.activeProduct !== 'home') {
+						this.activeProduct = 'home';
+						this.activePage = 'home';
+					}
+					this.refresh();
 				});
 			});
 	}

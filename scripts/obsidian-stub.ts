@@ -27,6 +27,17 @@ export class Modal {
 // Runtime markers for value imports in modules under test.
 export class TFolder {}
 export class App {}
+export class PluginSettingTab {
+	app: unknown;
+	plugin: unknown;
+	containerEl: El;
+
+	constructor(app?: unknown, plugin?: unknown) {
+		this.app = app;
+		this.plugin = plugin;
+		this.containerEl = new El('div');
+	}
+}
 export class TFile {}
 export class Notice {
 	/** Every message ever shown, in order — lets verification scripts assert
@@ -109,8 +120,26 @@ export class Menu {
 export function normalizePath(path: string): string {
 	return path;
 }
-export const Platform = { isMobile: false, isMobileApp: false };
+export const Platform = { isMobile: false, isMobileApp: false, isDesktop: true, isDesktopApp: true };
 export function setIcon(_el: unknown, _icon: string): void {}
+export class ToggleComponent {
+	toggleEl: El;
+
+	constructor(container?: { appendChild?: (child: El) => unknown }) {
+		this.toggleEl = new El('div');
+		container?.appendChild?.(this.toggleEl);
+	}
+
+	setValue(_value?: boolean) {
+		return this;
+	}
+	onChange(_fn?: (value: boolean) => void) {
+		return this;
+	}
+	getValue() {
+		return false;
+	}
+}
 
 // Component base for MarkdownRenderer.render's lifecycle argument (the real
 // one is the ItemView). Trivial here — nothing in the scripts loads children.
@@ -205,10 +234,81 @@ function addUnit(d: Date, amount: number, unit: string): Date {
 	return out;
 }
 
-/** Minimal Setting stand-in: verify scripts never instantiate it — the export
- *  only needs to exist so bundles importing it from 'obsidian' resolve. */
+/** Chainable control recorded so tests can fire the real onChange from a render. */
+export interface StubControl {
+	options: string[];
+	inputEl: El;
+	fire: ((value: string | boolean) => void) | null;
+	addOption(value: string, _label?: string): StubControl;
+	setValue(_value: unknown): StubControl;
+	setPlaceholder(_value: string): StubControl;
+	setLimits(_min: number, _max: number, _step: number): StubControl;
+	setDynamicTooltip(): StubControl;
+	setButtonText(_text: string): StubControl;
+	setDisabled(_disabled: boolean): StubControl;
+	setIcon(_icon: string): StubControl;
+	setTooltip(_text: string): StubControl;
+	onChange(fn: (value: string | boolean) => void): StubControl;
+	onClick(_fn: () => void): StubControl;
+}
+
+function stubControl(): StubControl {
+	const control: StubControl = {
+		options: [],
+		inputEl: new El('input'),
+		fire: null,
+		addOption(value: string) {
+			control.options.push(value);
+			return control;
+		},
+		setValue() {
+			return control;
+		},
+		setPlaceholder() {
+			return control;
+		},
+		setLimits() {
+			return control;
+		},
+		setDynamicTooltip() {
+			return control;
+		},
+		setButtonText() {
+			return control;
+		},
+		setDisabled() {
+			return control;
+		},
+		setIcon() {
+			return control;
+		},
+		setTooltip() {
+			return control;
+		},
+		onChange(fn: (value: string | boolean) => void) {
+			control.fire = fn;
+			return control;
+		},
+		onClick() {
+			return control;
+		},
+	};
+	return control;
+}
+
+/** Minimal Setting stand-in. Callbacks are invoked so a render can be driven. */
 export class Setting {
-	constructor(_container?: unknown) {}
+	static created: Setting[] = [];
+	settingEl: El;
+	readonly toggles: StubControl[] = [];
+	readonly dropdowns: StubControl[] = [];
+
+	constructor(container?: { appendChild?: (child: El) => unknown }) {
+		this.settingEl = new El('div');
+		this.settingEl.addClass('setting-item');
+		container?.appendChild?.(this.settingEl);
+		Setting.created.push(this);
+	}
 	setName() {
 		return this;
 	}
@@ -218,22 +318,40 @@ export class Setting {
 	setHeading() {
 		return this;
 	}
-	addText() {
+	setClass() {
 		return this;
 	}
-	addToggle() {
+	addText(cb?: (text: StubControl) => void) {
+		const text = stubControl();
+		cb?.(text);
 		return this;
 	}
-	addDropdown() {
+	addToggle(cb?: (toggle: StubControl) => void) {
+		const toggle = stubControl();
+		this.toggles.push(toggle);
+		cb?.(toggle);
 		return this;
 	}
-	addSlider() {
+	addDropdown(cb?: (dropdown: StubControl) => void) {
+		const dropdown = stubControl();
+		this.dropdowns.push(dropdown);
+		cb?.(dropdown);
 		return this;
 	}
-	addButton() {
+	addSlider(cb?: (slider: StubControl) => void) {
+		cb?.(stubControl());
 		return this;
 	}
-	addExtraButton() {
+	addButton(cb?: (button: StubControl) => void) {
+		cb?.(stubControl());
+		return this;
+	}
+	addExtraButton(cb?: (button: StubControl) => void) {
+		cb?.(stubControl());
+		return this;
+	}
+	addColorPicker(cb?: (picker: StubControl) => void) {
+		cb?.(stubControl());
 		return this;
 	}
 }

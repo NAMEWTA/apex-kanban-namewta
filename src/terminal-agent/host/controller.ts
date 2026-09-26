@@ -18,6 +18,7 @@ import { i18n, t } from '../i18n';
 import { t as sharedT } from '../../shared/i18n';
 import { debugLog, errorLog } from '../logger';
 import { TERMINAL_RIBBON_ICON_ID } from '../icons';
+import { mountNandStatusBarEntry } from './status-bar-entry';
 import { accountConfigDir } from '../launch/accounts';
 import { getAgent } from '../launch/catalog';
 import { cachedVaultSessions, createNodeSessionIo, scanVaultSessions } from '../sessions/scan';
@@ -568,12 +569,8 @@ export class TerminalAgentController {
     this._statusBarItem.addClass('is-clickable');
     this._statusBarItem.setAttr('aria-label', t('ribbon.terminalTooltip'));
 
-    const iconEl = activeDocument.createSpan({ cls: 'terminal-status-bar-icon' });
+    const { iconEl } = mountNandStatusBarEntry(this._statusBarItem, activeDocument);
     setIcon(iconEl, TERMINAL_RIBBON_ICON_ID);
-    const labelEl = activeDocument.createElement('span');
-    labelEl.addClass('terminal-status-bar-label');
-    labelEl.textContent = 'NAND';
-    this._statusBarItem.append(iconEl, labelEl);
     
     // Add click handler
     this._statusBarItem.addEventListener('click', (event: MouseEvent) => {

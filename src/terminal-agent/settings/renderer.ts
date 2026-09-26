@@ -452,35 +452,36 @@ export class TerminalSettingsRenderer extends BaseSettingsRenderer {
       text: t('settingsDetails.terminal.displayTabAppearance'),
     });
 
-    // Tab content container
+    // Both panes stay mounted. The renderer dropdown lives on the appearance
+    // pane and updates the theme pane's custom-color block in place.
     const tabContent = displayCard.createDiv({ cls: 'terminal-display-tab-content' });
+    const themePane = tabContent.createDiv({ cls: 'terminal-display-tab-pane' });
+    const appearancePane = tabContent.createDiv({ cls: 'terminal-display-tab-pane' });
+    this.renderThemeTabContent(themePane);
+    this.renderAppearanceTabContent(appearancePane);
 
-    const renderActiveTab = (): void => {
-      tabContent.empty();
-      themeTabBtn.toggleClass('is-active', this.displayActiveTab === 'theme');
-      appearanceTabBtn.toggleClass('is-active', this.displayActiveTab === 'appearance');
-      themeTabBtn.setAttribute('aria-pressed', String(this.displayActiveTab === 'theme'));
-      appearanceTabBtn.setAttribute('aria-pressed', String(this.displayActiveTab === 'appearance'));
-
-      if (this.displayActiveTab === 'theme') {
-        this.renderThemeTabContent(tabContent);
-      } else {
-        this.renderAppearanceTabContent(tabContent);
-      }
+    const showActiveTab = (): void => {
+      const theme = this.displayActiveTab === 'theme';
+      themeTabBtn.toggleClass('is-active', theme);
+      appearanceTabBtn.toggleClass('is-active', !theme);
+      themeTabBtn.setAttribute('aria-pressed', String(theme));
+      appearanceTabBtn.setAttribute('aria-pressed', String(!theme));
+      themePane.toggleClass('is-hidden', !theme);
+      appearancePane.toggleClass('is-hidden', theme);
     };
 
     themeTabBtn.addEventListener('click', () => {
       if (this.displayActiveTab === 'theme') return;
       this.displayActiveTab = 'theme';
-      renderActiveTab();
+      showActiveTab();
     });
     appearanceTabBtn.addEventListener('click', () => {
       if (this.displayActiveTab === 'appearance') return;
       this.displayActiveTab = 'appearance';
-      renderActiveTab();
+      showActiveTab();
     });
 
-    renderActiveTab();
+    showActiveTab();
   }
 
   /**

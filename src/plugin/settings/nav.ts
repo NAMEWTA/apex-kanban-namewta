@@ -1,5 +1,5 @@
 /** Settings chrome shared by the declarative tab and the pre-1.13 fallback.
- *  Primary products sit on the top row. Secondary pages are a vertical list. */
+ *  Open products sit on one top row. Section ids are the order stacked on that tab. */
 
 export type SettingsProduct = 'home' | 'dashboard' | 'editor' | 'terminal' | 'sync';
 
@@ -26,7 +26,21 @@ export function productOrder(): SettingsProduct[] {
 	return ['home', 'dashboard', 'editor', 'terminal', 'sync'];
 }
 
-/** Pages that appear in the left menu. Home and sync have no second level. */
+export interface ModuleGates {
+	dashboard: boolean;
+	editor: boolean;
+	terminal: boolean;
+}
+
+/** Top tabs. Home and sync stay. Board, editor, and agents appear only while open. */
+export function visibleProducts(modules: ModuleGates): SettingsProduct[] {
+	return productOrder().filter((product) => {
+		if (product === 'home' || product === 'sync') return true;
+		return modules[product];
+	});
+}
+
+/** Section order stacked on a product tab. Home and sync have no extra sections. */
 export function sidePages(product: SettingsProduct): SettingsPage[] {
 	if (product === 'dashboard') return ['general', 'widgets', 'coffee'];
 	if (product === 'editor') return ['comments', 'copy'];

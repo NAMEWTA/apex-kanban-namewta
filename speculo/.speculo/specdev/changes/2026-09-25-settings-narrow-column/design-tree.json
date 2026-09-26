@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "artifact": "design-tree",
+  "change": "2026-09-25-settings-narrow-column",
+  "status": "consensus",
+  "round": 4,
+  "nodes": [
+    {
+      "id": "D-001",
+      "title": "设置页只保留顶部一排 Tab",
+      "question": "设置页的切换要保留左侧二级导航，还是收成顶部一排 Tab？各设置项是否一起改？",
+      "depends_on": [],
+      "recommendation": "只改切换。顶部一排 Tab，页内保留现有设置项。",
+      "status": "answered",
+      "round": 2,
+      "answer": "设置项本身不改。取消左侧二级导航，只留顶部一排 Tab，铺开切换。顺序是首页、看板、编辑器、智能体、同步。首页是其中一页，用来分别打开或关闭看板、编辑器、智能体。同步不是开关。看板、编辑器、智能体、同步各自的 Tab 内，按现有顺序放下该领域原来各子页中的设置项，不再分子页。来源 Issue 里「二级导航在左、内容在右」的布局被这个决定替代。",
+      "log_ref": "LOG-004"
+    },
+    {
+      "id": "D-002",
+      "title": "关闭模块后顶部 Tab 是否还在",
+      "question": "在首页关闭看板、编辑器或智能体之后，顶部对应的 Tab 还显示吗？",
+      "depends_on": ["D-001"],
+      "recommendation": "Tab 仍显示。关闭只停止该模块的功能，设置项还在原来的 Tab 里。这是现在的行为，也不用把设置页藏起来。",
+      "status": "answered",
+      "round": 3,
+      "answer": "Tab 隐藏。顶部只留下首页和仍打开的领域。要改该领域的设置，先在首页把它打开。同步没有开关，所以同步 Tab 始终保留。三个模块默认是打开的，首次使用时首页、看板、编辑器、智能体、同步都在。",
+      "log_ref": "LOG-005"
+    }
+  ]
+}

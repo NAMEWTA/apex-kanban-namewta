@@ -24,3 +24,9 @@ AGENTS.md
 300句经典句子.md
 # DQL test fixtures (local only)
 dataview-test/
+speculo/.speculo/back/
+.speculo-init.lock/
+.speculo-init-stage-*/
+.speculo-file-*.tmp
+specdev-worktree/
+scripts/tmp/

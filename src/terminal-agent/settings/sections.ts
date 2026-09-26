@@ -16,6 +16,32 @@ export type TerminalSettingsSection =
 const renderers = new WeakMap<TerminalAgentController, TerminalSettingsRenderer>();
 const expanded = new WeakMap<TerminalAgentController, Set<string>>();
 
+/** All terminal sections share one renderer context so later sections do not drop earlier DOM or listeners. */
+export function renderStackedTerminalAgentSettings(
+	container: HTMLElement,
+	plugin: TerminalAgentController,
+): void {
+	container.empty();
+	let renderer = renderers.get(plugin);
+	if (!renderer) {
+		renderer = new TerminalSettingsRenderer();
+		renderers.set(plugin, renderer);
+	}
+	let open = expanded.get(plugin);
+	if (!open) {
+		open = new Set<string>();
+		expanded.set(plugin, open);
+	}
+	renderer.render({
+		app: plugin.app,
+		plugin,
+		containerEl: container,
+		expandedSections: open,
+	});
+	const agents = container.createDiv();
+	renderAgentSettings(agents, plugin);
+}
+
 export function renderTerminalAgentSettings(
 	container: HTMLElement,
 	plugin: TerminalAgentController,

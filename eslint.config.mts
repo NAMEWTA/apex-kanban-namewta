@@ -35,5 +35,6 @@ export default tseslint.config(
 		"main.js",
 		"scripts/**",
 		"**/*.test.ts",
+		"speculo/**",
 	]),
 );
