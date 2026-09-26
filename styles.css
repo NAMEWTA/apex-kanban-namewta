@@ -23412,9 +23412,13 @@ body.is-mobile .dashboard-media-item .dashboard-media-tagbtn { opacity: 1; }
   z-index: 3;
   pointer-events: none;
 }
+/* Canvas and WebGL draw the cursor in this layer. The DOM renderer uses an
+   in-flow span, so absolute positioning stays on the layer only. */
+.xterm-cursor-layer .xterm-cursor {
+  position: absolute;
+}
 /* Cursor - block cursor */
 .xterm-cursor {
-  position: absolute;
   background-color: var(--text-accent);
   opacity: 1;
   z-index: 3;
@@ -23460,6 +23464,15 @@ body.is-mobile .dashboard-media-item .dashboard-media-tagbtn { opacity: 1; }
   height: 1px;
   bottom: 0;
   width: 1ch;
+}
+/* The DOM renderer sets span height to 100% of the terminal. These four
+   classes outrank that rule so the cursor stays one cell tall. */
+.terminal-container .xterm-rows .xterm-cursor.xterm-cursor-block,
+.terminal-container .xterm-rows .xterm-cursor.xterm-cursor-outline,
+.terminal-container .xterm-rows .xterm-cursor.xterm-cursor-bar,
+.terminal-container .xterm-rows .xterm-cursor.xterm-cursor-underline {
+  position: static;
+  height: 1.2em;
 }
 /* ==================== Text and Render Layers ==================== */
 /* Text layer */

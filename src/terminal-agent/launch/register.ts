@@ -5,7 +5,8 @@ import { normalizeAgentSettings } from './defaults';
 import { AGENT_CATALOG } from './catalog';
 import { launchAgent, launchShell, resumeAgent, type LaunchHost } from './launcher';
 import { nextUsageDelayMs } from '../terminal/path-reference';
-import { readUsageSnapshots, formatUsageChip } from './usage';
+import { readUsageSnapshots } from './usage';
+import { enabledUsageAgents, paintUsageBar, usageBarVisible } from './usage-bar';
 import type { VaultSession } from '../sessions/types';
 import { UsageModal } from './usage-modal';
 import type { AgentId, AgentSettings, UsageSnapshot } from './types';
@@ -47,21 +48,13 @@ export function resumeRegisteredSession(session: VaultSession): Promise<void> {
 }
 
 async function openUsage(plugin: OrcaPluginHost): Promise<void> {
+  if (!usageBarVisible(plugin)) return;
   const snapshots = await readUsageSnapshots(enabledUsageAgents(plugin));
   new UsageModal(plugin.app, snapshots).open();
 }
 
-function enabledUsageAgents(plugin: OrcaPluginHost): AgentId[] {
-  const { agents } = plugin.settings.agentSettings;
-  return AGENT_CATALOG
-    .filter((agent) => agent.usage !== 'none' && agents[agent.id]?.showUsage !== false)
-    .map((agent) => agent.id);
-}
-
-function usageBarVisible(plugin: OrcaPluginHost): boolean {
-  if (plugin.isActive && !plugin.isActive()) return false;
-  if (!plugin.settings.agentSettings.showUsageInStatusBar) return false;
-  return enabledUsageAgents(plugin).length > 0;
+export function refreshRegisteredUsage(): void {
+  refreshUsageStatus?.();
 }
 
 export function registerOrca(plugin: OrcaPluginHost): void {
@@ -128,24 +121,10 @@ export function registerOrca(plugin: OrcaPluginHost): void {
     if (inflight) return;
     inflight = true;
     try {
-      const show = usageBarVisible(plugin);
-      status.toggleClass('is-hidden', !show);
-      status.replaceChildren();
-      if (!show) return;
-      latest = await readUsageSnapshots(enabledUsageAgents(plugin));
-      consecutiveFailures = latest.some((snapshot) => snapshot.failed) ? consecutiveFailures + 1 : 0;
-      const chips = latest.flatMap((snapshot) => {
-        const rest = formatUsageChip(snapshot);
-        return rest ? [{ provider: snapshot.provider, rest }] : [];
-      });
-      if (chips.length === 0) {
-        status.createSpan({ cls: 'terminal-usage-rest', text: t('terminalAgent.agents.usageChip') });
-      } else {
-        for (const chip of chips) {
-          const item = status.createSpan({ cls: 'terminal-usage-item' });
-          item.createSpan({ cls: 'terminal-usage-agent', text: chip.provider });
-          item.createSpan({ cls: 'terminal-usage-rest', text: chip.rest });
-        }
+      const painted = await paintUsageBar(status, plugin, (ids) => readUsageSnapshots(ids));
+      if (painted) {
+        latest = painted;
+        consecutiveFailures = painted.some((snapshot) => snapshot.failed) ? consecutiveFailures + 1 : 0;
       }
     } finally {
       inflight = false;
@@ -156,6 +135,7 @@ export function registerOrca(plugin: OrcaPluginHost): void {
     void render();
   };
   status.addEventListener('click', () => {
+    if (!usageBarVisible(plugin)) return;
     new UsageModal(plugin.app, latest).open();
     void render();
   });

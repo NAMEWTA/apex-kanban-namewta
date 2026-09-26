@@ -84,7 +84,7 @@ export function commentsCmExtension(plugin: DashboardPlugin): Extension {
 						store.reconcile(path, view.state.doc.toString());
 					});
 				}
-				this.syncPopover(view);
+				this.queuePopover(view);
 			}
 
 			update(update: ViewUpdate): void {
@@ -107,7 +107,7 @@ export function commentsCmExtension(plugin: DashboardPlugin): Extension {
 					update.focusChanged ||
 					refreshed
 				) {
-					this.syncPopover(update.view);
+					this.queuePopover(update.view);
 				}
 			}
 
@@ -119,36 +119,54 @@ export function commentsCmExtension(plugin: DashboardPlugin): Extension {
 				this.popover = null;
 			}
 
-			private syncPopover(view: EditorView): void {
+			private popoverShouldShow(view: EditorView): boolean {
 				const store = getCommentStore();
 				const path = pathOf(view.state);
 				const selection = view.state.selection.main;
-				const show =
+				return (
 					plugin.settings.editorWorkbench.popoverEnabled &&
 					!!store &&
 					!!path &&
 					!selection.empty &&
-					selectionIsCommentable(view.state.doc.toString(), selection.from, selection.to);
-				if (!show || !path || !store) {
+					selectionIsCommentable(view.state.doc.toString(), selection.from, selection.to)
+				);
+			}
+
+			/** Position the popover after layout. coordsAtPos is illegal during update. */
+			private queuePopover(view: EditorView): void {
+				if (!this.popoverShouldShow(view)) {
 					this.popover?.remove();
 					this.popover = null;
 					return;
 				}
-				const coords = view.coordsAtPos(selection.from);
-				if (!coords) {
-					this.popover?.remove();
-					this.popover = null;
-					return;
-				}
-				const pop = this.ensurePopover(view);
-				const input = pop.querySelector('textarea');
-				if (!(input instanceof HTMLTextAreaElement) || input.hidden) {
-					pop.dataset['path'] = path;
-					pop.dataset['from'] = String(selection.from);
-					pop.dataset['to'] = String(selection.to);
-				}
-				pop.style.left = `${Math.max(8, coords.left)}px`;
-				pop.style.top = `${Math.max(8, coords.top - 36)}px`;
+				view.requestMeasure({
+					key: this,
+					read: (measured) => {
+						if (this.dead || !this.popoverShouldShow(measured)) return null;
+						const selection = measured.state.selection.main;
+						const coords = measured.coordsAtPos(selection.from);
+						const path = pathOf(measured.state);
+						if (!coords || !path) return null;
+						return { coords, path, from: selection.from, to: selection.to };
+					},
+					write: (place, measured) => {
+						if (this.dead) return;
+						if (!place) {
+							this.popover?.remove();
+							this.popover = null;
+							return;
+						}
+						const pop = this.ensurePopover(measured);
+						const input = pop.querySelector('textarea');
+						if (!(input instanceof HTMLTextAreaElement) || input.hidden) {
+							pop.dataset['path'] = place.path;
+							pop.dataset['from'] = String(place.from);
+							pop.dataset['to'] = String(place.to);
+						}
+						pop.style.left = `${Math.max(8, place.coords.left)}px`;
+						pop.style.top = `${Math.max(8, place.coords.top - 36)}px`;
+					},
+				});
 			}
 
 			private ensurePopover(view: EditorView): HTMLElement {

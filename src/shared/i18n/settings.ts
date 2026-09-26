@@ -2,6 +2,9 @@
 export const messages = {
 	en: {
 		'settings.general': 'General',
+		'settings.sectionBar': 'Navigation',
+		'settings.widgetTheme': 'Quick actions and weather',
+		'settings.widgetRest': 'Other widgets',
 		'settings.tabGeneral': 'General',
 		'settings.tabGeneralDesc': 'Language, appearance, quick notes, data services',
 		'settings.tabWidgets': 'Widgets',
@@ -20,6 +23,9 @@ export const messages = {
 	},
 	zh: {
 		'settings.general': '通用',
+		'settings.sectionBar': '导航',
+		'settings.widgetTheme': '快捷与天气',
+		'settings.widgetRest': '其余小组件',
 		'settings.tabGeneral': '常规',
 		'settings.tabGeneralDesc': '语言、外观、快捷笔记、数据服务',
 		'settings.tabWidgets': '小组件',

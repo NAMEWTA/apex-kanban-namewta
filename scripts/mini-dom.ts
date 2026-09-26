@@ -69,6 +69,32 @@ export class El {
 		return this.parent;
 	}
 
+	get parentNode(): El | null {
+		return this.parent;
+	}
+
+	get childNodes(): El[] {
+		return this.children;
+	}
+
+	/** Live attribute list so CodeMirror can clear and rewrite marks. */
+	get attributes(): { length: number; [index: number]: { name: string; value: string } | undefined } {
+		const self = this;
+		return new Proxy([] as Array<{ name: string; value: string }>, {
+			get(_target, prop) {
+				const entries = [...self.attrs.entries()].map(([name, value]) => ({ name, value }));
+				if (prop === 'length') return entries.length;
+				if (prop === 'item') return (index: number) => entries[index];
+				if (typeof prop === 'string' && /^\d+$/.test(prop)) return entries[Number(prop)];
+				return undefined;
+			},
+		});
+	}
+
+	removeAttributeNode(attr: { name: string }): void {
+		this.attrs.delete(attr.name);
+	}
+
 	get nextSibling(): El | null {
 		if (!this.parent) return null;
 		const index = this.parent.children.indexOf(this);
@@ -177,6 +203,10 @@ export class El {
 	appendText(v: string): El {
 		this.text += v;
 		return this;
+	}
+
+	append(...nodes: El[]): void {
+		for (const node of nodes) this.appendChild(node);
 	}
 
 	appendChild(child: El): El {

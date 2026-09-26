@@ -26,6 +26,7 @@ import {
 import { ClaudeCodeSessionState } from './claude-code-session-state';
 import { TerminalTitleState } from './terminal-title-state';
 import { resolveTerminalContextMenuAction } from './terminal-context-menu-router';
+import { terminalRendererNotice } from './renderer-fallback';
 import {
   extractCmdCwd,
   extractCwdFromPromptLines,
@@ -475,6 +476,11 @@ export class TerminalInstance {
         return;
       }
 
+      if (!this.checkRendererSupport('webgl')) {
+        this.warnWebglUnavailable('WebGL2 not supported');
+        return;
+      }
+
       const webglAddon = new WebglAddon();
       webglAddon.onContextLoss(() => {
         errorLog('[Terminal] WebGL context lost, fallback to canvas renderer');
@@ -487,10 +493,22 @@ export class TerminalInstance {
         this.notifyRendererChanged();
       }
     } catch (error) {
+      if (renderer === 'webgl') {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.warnWebglUnavailable(errorMsg);
+        return;
+      }
       const errorMsg = error instanceof Error ? error.message : String(error);
       errorLog(`[Terminal] ${renderer} renderer failed:`, error);
       throw new Error(t('terminalInstance.rendererLoadFailed', { renderer: renderer.toUpperCase(), message: errorMsg }));
     }
+  }
+
+  private warnWebglUnavailable(message: string): void {
+    debugWarn('[Terminal] webgl renderer unavailable:', message);
+    console.warn('[Terminal] webgl renderer unavailable:', message);
+    this.renderer = null;
+    this.rendererType = null;
   }
 
   private notifyRendererChanged(): void {
@@ -1044,8 +1062,8 @@ export class TerminalInstance {
           this.fit();
         })
         .catch((error) => {
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          this.xterm.write(`\r\n\x1b[1;31m[渲染器错误] ${errorMsg}\x1b[0m\r\n`);
+          const line = terminalRendererNotice(error);
+          if (line) this.xterm.write(line);
         });
     });
   }

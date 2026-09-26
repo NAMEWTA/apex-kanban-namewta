@@ -1,6 +1,7 @@
 // Minimal `obsidian` stub so test bundles can import modules that pull in
 // `requestUrl` at runtime. Only what the scripts under test need; network
 // paths are never exercised by these checks.
+import { StateField } from '@codemirror/state';
 import { El } from './mini-dom';
 
 export const requestUrl = async (): Promise<{ json: unknown }> => ({ json: {} });
@@ -39,6 +40,16 @@ export class PluginSettingTab {
 	}
 }
 export class TFile {}
+export class MarkdownView {}
+/** Present so comment highlights can read the note path in node tests. */
+export const editorInfoField = StateField.define<{ file?: { path?: string } | null }>({
+	create() {
+		return { file: null };
+	},
+	update(value) {
+		return value;
+	},
+});
 export class Notice {
 	/** Every message ever shown, in order — lets verification scripts assert
 	 *  on notice text without a real toast. */

@@ -15,6 +15,7 @@ import { setLanguage, t } from '../shared/i18n';
 import { normalizeEditorWorkbench } from '../shared/editor-workbench';
 import { IntroModal } from './intro-modal';
 import { InactiveTerminalView } from './inactive-terminal-view';
+import { terminalLeafKind } from './terminal-leaf-kind';
 
 import { teardownBasenameIndex } from '../dashboard-view/renderer';
 import { MediaTagService, sanitizeMediaTags, registerMediaTagService } from '../dashboard-view/media/media-tags';
@@ -401,9 +402,12 @@ export default class DashboardPlugin extends Plugin {
 
 	private async reopenTerminalLeaves(): Promise<void> {
 		if (!this.app.workspace.layoutReady) return;
+		const active = terminalLeafKind(this.terminalHost?.isActive() === true) === 'active';
 		for (const leaf of this.app.workspace.getLeavesOfType(TERMINAL_VIEW_TYPE)) {
-			const state = leaf.getViewState();
-			await leaf.setViewState({ type: TERMINAL_VIEW_TYPE, state: state.state, active: false });
+			const next = active && this.terminalHost
+				? this.terminalHost.createLeafView(leaf)
+				: new InactiveTerminalView(leaf, this);
+			await leaf.open(next);
 		}
 	}
 

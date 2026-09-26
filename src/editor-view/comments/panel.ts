@@ -55,12 +55,12 @@ function draw(el: HTMLElement, ctx: CommentPanelContext, store: CommentStore, pa
 	}
 	const list = el.createDiv({ cls: 'apex-editor-comments-list' });
 	for (const thread of threads) {
-		list.append(renderCard(ctx, store, thread));
+		renderCard(list, ctx, store, thread);
 	}
 }
 
-function renderCard(ctx: CommentPanelContext, store: CommentStore, thread: CommentThread): HTMLElement {
-	const card = activeDocument.createDiv({
+function renderCard(parent: HTMLElement, ctx: CommentPanelContext, store: CommentStore, thread: CommentThread): HTMLElement {
+	const card = parent.createDiv({
 		cls: 'apex-editor-comment' + (store.focusedId === thread.id ? ' is-focused' : ''),
 	});
 	card.dataset['commentId'] = thread.id;

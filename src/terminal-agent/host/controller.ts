@@ -52,7 +52,7 @@ import {
   readinessToBadge,
   type AiLauncherStatusSnapshot,
 } from '../terminal/ai-launcher-status';
-import { isAgentId, launchRegisteredAgent, registerOrca, resumeRegisteredSession } from '../launch/register';
+import { isAgentId, launchRegisteredAgent, refreshRegisteredUsage, registerOrca, resumeRegisteredSession } from '../launch/register';
 import { normalizeAgentSettings } from '../launch/defaults';
 import { LauncherInstallModal } from '../view/launcher-install-modal';
 
@@ -408,11 +408,13 @@ export class TerminalAgentController {
   activate(): void {
     this._active = true;
     this.updateStatusBar();
+    refreshRegisteredUsage();
   }
 
   async deactivate(): Promise<void> {
     this._active = false;
     this._statusBarItem?.toggleClass('is-hidden', true);
+    refreshRegisteredUsage();
     this.closePresetScriptsMenu();
     if (this._terminalService) {
       try {

@@ -112,7 +112,7 @@ export class DashboardSettingTab extends PluginSettingTab {
 				type: 'group',
 				items: [
 					{
-						name: t('settings.general'),
+						name: t('settings.sectionBar'),
 						searchable: false, // the tab bar, not a setting
 						render: (setting) => {
 							asBlock(setting);
@@ -188,12 +188,12 @@ export class DashboardSettingTab extends PluginSettingTab {
 						},
 					},
 					{
-						// Continuation of the widgetTheme block (pomodoro,
-						// reading, habit, expense, countdown) — rendered between
-						// the calendar section above and the lunar/year sections
-						// below. The cards stay searchable through the
-						// widgetTheme entry's aliases.
-						name: t('settings.widgetTheme'),
+						// Continuation of the widget block (pomodoro, reading,
+						// habit, expense, countdown), between the calendar
+						// section above and the lunar/year sections below.
+						// The cards stay searchable through the
+						// settings.widgetTheme entry's aliases.
+						name: t('settings.widgetRest'),
 						searchable: false,
 						render: (setting) => {
 							asBlock(setting);

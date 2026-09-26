@@ -5,8 +5,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { EditorState } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { editorInfoField } from 'obsidian';
 import { locateAnchor, makeAnchor, selectionIsCommentable } from '../src/editor-view/comments/anchor';
-import { CommentStore, type CommentFs } from '../src/editor-view/comments/store';
+import { commentsCmExtension } from '../src/editor-view/comments/cm-extension';
+import { mountCommentsPanel } from '../src/editor-view/comments/panel';
+import { CommentStore, registerCommentStore, type CommentFs } from '../src/editor-view/comments/store';
+import { El } from './mini-dom';
 
 const doc = '---\ntitle: x\n---\n\nHello prefix TARGET suffix tail.\n\n```\ncode TARGET\n```\n\nAfter.';
 
@@ -128,6 +134,148 @@ await orphanStore.add('a.md', { quote: makeAnchor('alpha', 0, 5), start: 0, end:
 orphanStore.reconcile('a.md', 'zzzz');
 await new Promise((resolve) => setTimeout(resolve, 20));
 assert.equal(orphanStore.threadsFor('a.md')[0]?.status, 'orphaned');
+
+if (typeof globalThis.HTMLTextAreaElement === 'undefined') {
+	(globalThis as { HTMLTextAreaElement: new () => HTMLTextAreaElement }).HTMLTextAreaElement = class HTMLTextAreaElement {} as never;
+}
+const panelNote = 'Please keep this note byte-for-byte.';
+const panelStore = new CommentStore(memoryFs(), { debounceMs: 1000 });
+await panelStore.add('notes/demo.md', {
+	quote: makeAnchor(panelNote, 7, 11),
+	start: 7,
+	end: 11,
+	text: 'visible',
+});
+await panelStore.flush();
+registerCommentStore(panelStore);
+const host = new El('div') as El & { ownerDocument: { activeElement: null } };
+host.ownerDocument = { activeElement: null };
+mountCommentsPanel(host as unknown as HTMLElement, {
+	app: {} as never,
+	plugin: {} as never,
+	file: { path: 'notes/demo.md', extension: 'md' } as never,
+});
+await panelStore.loadFile('notes/demo.md');
+const card = host.querySelector('.apex-editor-comment');
+const list = host.querySelector('.apex-editor-comments-list');
+assert.ok(card, 'comment card is rendered');
+assert.equal(card?.parentElement, list);
+assert.equal(card?.textContent.includes('keep'), true);
+assert.equal(panelNote, 'Please keep this note byte-for-byte.', 'rendering a card does not touch the note');
+
+const frames: FrameRequestCallback[] = [];
+const editorBody = new El('body');
+const editorDocument = Object.assign(new El('#document'), {
+	body: editorBody,
+	documentElement: new El('html'),
+	nodeType: 9,
+	defaultView: globalThis,
+	activeElement: null as El | null,
+	hasFocus() {
+		return false;
+	},
+	createElement(tag: string) {
+		const el = new El(tag);
+		Object.assign(el, {
+			ownerDocument: editorDocument,
+			nodeType: 1,
+			clientHeight: 16,
+			clientWidth: 80,
+			scrollTop: 0,
+			scrollLeft: 0,
+			scrollHeight: 16,
+			scrollWidth: 80,
+		});
+		el.getBoundingClientRect = () => ({ top: 0, right: 80, bottom: 16, left: 0, width: 80, height: 16 });
+		return el;
+	},
+	createElementNS(_ns: string, tag: string) {
+		return this.createElement(tag);
+	},
+	createTextNode(text: string) {
+		const el = new El('#text');
+		el.textContent = text;
+		Object.assign(el, { ownerDocument: editorDocument, nodeType: 3, nodeValue: text });
+		return el;
+	},
+	addEventListener() {},
+	removeEventListener() {},
+	getSelection() {
+		return null;
+	},
+	elementFromPoint() {
+		return null;
+	},
+	createRange() {
+		return {
+			setStart() {},
+			setEnd() {},
+			getBoundingClientRect() {
+				return { top: 40, left: 12, right: 20, bottom: 56, width: 8, height: 16 };
+			},
+			getClientRects() {
+				return [{ top: 40, left: 12, right: 20, bottom: 56, width: 8, height: 16 }];
+			},
+		};
+	},
+});
+Object.assign(editorBody, { ownerDocument: editorDocument, nodeType: 1 });
+const win = globalThis as typeof globalThis & {
+	requestAnimationFrame: (cb: FrameRequestCallback) => number;
+	cancelAnimationFrame: (id: number) => void;
+	getComputedStyle: (elt: unknown) => CSSStyleDeclaration;
+	getSelection: () => null;
+	MutationObserver: unknown;
+};
+(globalThis as { document: unknown }).document = editorDocument;
+win.addEventListener = () => {};
+win.removeEventListener = () => {};
+win.requestAnimationFrame = (cb) => {
+	frames.push(cb);
+	return frames.length;
+};
+win.cancelAnimationFrame = () => {};
+win.getComputedStyle = () => new Proxy({} as CSSStyleDeclaration, {
+	get(_target, prop) {
+		if (prop === 'getPropertyValue') return () => '16px';
+		if (prop === 'whiteSpace') return 'pre';
+		if (prop === 'direction') return 'ltr';
+		if (prop === 'display') return 'block';
+		if (prop === 'position') return 'static';
+		return '16px';
+	},
+});
+win.getSelection = () => null;
+(globalThis as { MutationObserver: unknown }).MutationObserver = class {
+	observe(): void {}
+	disconnect(): void {}
+	takeRecords(): unknown[] {
+		return [];
+	}
+};
+const flushFrames = () => {
+	for (let i = 0; i < 6 && frames.length > 0; i += 1) {
+		const batch = frames.splice(0);
+		for (const cb of batch) cb(0);
+	}
+};
+const editor = new EditorView({
+	parent: editorBody as unknown as HTMLElement,
+	state: EditorState.create({
+		doc: panelNote,
+		extensions: [
+			editorInfoField.init(() => ({ file: { path: 'notes/demo.md' } }) as never),
+			commentsCmExtension({
+				settings: { editorWorkbench: { highlightEnabled: true, popoverEnabled: true } },
+			} as never),
+		],
+	}),
+});
+flushFrames();
+editor.dispatch({ selection: { anchor: 7, head: 11 } });
+flushFrames();
+assert.ok(editorBody.querySelector('.apex-comment-hl'), 'selecting text keeps the comment highlight');
+assert.ok(editorBody.querySelector('.apex-comment-popover'), 'selecting text shows the comment button');
 
 function walk(dir: string): string[] {
 	const out: string[] = [];
