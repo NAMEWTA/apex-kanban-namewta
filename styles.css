@@ -21681,7 +21681,7 @@ body.is-mobile .dashboard-media-item .dashboard-media-tagbtn { opacity: 1; }
 }
 .apex-comment-popover {
 	position: fixed;
-	z-index: 1000;
+	z-index: var(--layer-popover, 30);
 	display: flex;
 	flex-direction: column;
 	gap: 6px;

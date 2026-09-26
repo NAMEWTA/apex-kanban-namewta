@@ -304,6 +304,12 @@ export class El {
 		this.listeners.set(type, list);
 	}
 
+	removeEventListener(type: string, fn: (ev: unknown) => void): void {
+		const list = this.listeners.get(type);
+		if (!list) return;
+		this.listeners.set(type, list.filter((item) => item !== fn));
+	}
+
 	dispatchEvent(ev: { type: string; target?: El; key?: string; [extra: string]: unknown }): boolean {
 		// Listeners written against the real DOM commonly call
 		// stopPropagation/preventDefault; stopPropagation halts the walk (as in

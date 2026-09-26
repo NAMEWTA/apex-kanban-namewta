@@ -82,6 +82,7 @@ export function commentsCmExtension(plugin: DashboardPlugin): Extension {
 					void store.loadFile(path).then(() => {
 						if (this.dead) return;
 						store.reconcile(path, view.state.doc.toString());
+						this.view.dispatch({ effects: bump.of(store.revision) });
 					});
 				}
 				this.queuePopover(view);

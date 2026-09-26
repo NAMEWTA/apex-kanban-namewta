@@ -4,12 +4,20 @@ import { askText } from './prompt';
 import { getCommentStore, type CommentStore } from './store';
 import type { CommentThread } from './model';
 import type DashboardPlugin from '../../plugin/main';
+import { momentOf } from '../../shared/datetime';
 import { t } from '../../shared/i18n';
 
 export interface CommentPanelContext {
 	app: App;
 	plugin: DashboardPlugin;
 	file: TFile | null;
+}
+
+/** Local wall time for a stored UTC timestamp. Invalid values keep the raw prefix. */
+export function formatCommentTime(ts: string): string {
+	const parsed = momentOf(ts);
+	if (!parsed.isValid()) return ts.slice(0, 16).replace('T', ' ');
+	return parsed.format('YYYY-MM-DD HH:mm');
 }
 
 /** Side-panel thread list. Unmounting this does not remove editor highlights. */
@@ -77,7 +85,7 @@ function renderCard(parent: HTMLElement, ctx: CommentPanelContext, store: Commen
 	for (const message of thread.thread) {
 		const row = messages.createDiv({ cls: 'apex-editor-comment-message' });
 		row.createDiv({ cls: 'apex-editor-comment-text', text: message.text });
-		row.createDiv({ cls: 'apex-editor-comment-time', text: message.ts.slice(0, 16).replace('T', ' ') });
+		row.createDiv({ cls: 'apex-editor-comment-time', text: formatCommentTime(message.ts) });
 	}
 	const actions = card.createDiv({ cls: 'apex-editor-comment-actions' });
 	if (thread.status === 'orphaned') {

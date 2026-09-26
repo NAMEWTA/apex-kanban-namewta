@@ -15,6 +15,7 @@ import type {
   ShellEventType,
 } from './types';
 import { debugLog, errorLog } from '../logger';
+import { createSerialQueue } from './serial-queue';
 
 type SessionEventHandler<K extends keyof SessionEventListeners> =
   SessionEventListeners[K] extends Set<infer Handler> ? Handler : never;
@@ -31,18 +32,21 @@ export class PtyClient extends ModuleClient {
   
   /** Temporarily stores the init request ID for response correlation */
   private pendingInitId: string | null = null;
+  private readonly enqueueInit = createSerialQueue();
 
   constructor() {
     super('pty');
   }
 
   /**
-   * Initialize a PTY session
-   * 
-   * @param config PTY config
-   * @returns Promise<string> Returns session_id
+   * Initialize a PTY session. Overlapping calls wait, so one pendingInitId
+   * is enough to match init_complete.
    */
-  async init(config: PtyConfig = {}): Promise<string> {
+  init(config: PtyConfig = {}): Promise<string> {
+    return this.enqueueInit(() => this.beginInit(config));
+  }
+
+  private beginInit(config: PtyConfig): Promise<string> {
     return new Promise((resolve, reject) => {
       // Generate a temporary ID for correlating the response
       const tempId = `init-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;

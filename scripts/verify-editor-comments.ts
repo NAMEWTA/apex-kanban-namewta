@@ -10,7 +10,7 @@ import { EditorView } from '@codemirror/view';
 import { editorInfoField } from 'obsidian';
 import { locateAnchor, makeAnchor, selectionIsCommentable } from '../src/editor-view/comments/anchor';
 import { commentsCmExtension } from '../src/editor-view/comments/cm-extension';
-import { mountCommentsPanel } from '../src/editor-view/comments/panel';
+import { formatCommentTime, mountCommentsPanel } from '../src/editor-view/comments/panel';
 import { CommentStore, registerCommentStore, type CommentFs } from '../src/editor-view/comments/store';
 import { El } from './mini-dom';
 
@@ -138,8 +138,19 @@ assert.equal(orphanStore.threadsFor('a.md')[0]?.status, 'orphaned');
 if (typeof globalThis.HTMLTextAreaElement === 'undefined') {
 	(globalThis as { HTMLTextAreaElement: new () => HTMLTextAreaElement }).HTMLTextAreaElement = class HTMLTextAreaElement {} as never;
 }
+const stamped = '2026-09-26T10:46:18.387Z';
+const stampedDate = new Date(stamped);
+const pad = (value: number) => String(value).padStart(2, '0');
+const localStamp = `${stampedDate.getFullYear()}-${pad(stampedDate.getMonth() + 1)}-${pad(stampedDate.getDate())} ${pad(stampedDate.getHours())}:${pad(stampedDate.getMinutes())}`;
+assert.equal(formatCommentTime(stamped), localStamp);
+if (stampedDate.getTimezoneOffset() !== 0) {
+	assert.notEqual(formatCommentTime(stamped), stamped.slice(0, 16).replace('T', ' '));
+}
+assert.equal(formatCommentTime('not-a-time'), 'not-a-time');
+
 const panelNote = 'Please keep this note byte-for-byte.';
-const panelStore = new CommentStore(memoryFs(), { debounceMs: 1000 });
+const panelFs = memoryFs();
+const panelStore = new CommentStore(panelFs, { debounceMs: 1000 });
 await panelStore.add('notes/demo.md', {
 	quote: makeAnchor(panelNote, 7, 11),
 	start: 7,
@@ -277,6 +288,28 @@ flushFrames();
 assert.ok(editorBody.querySelector('.apex-comment-hl'), 'selecting text keeps the comment highlight');
 assert.ok(editorBody.querySelector('.apex-comment-popover'), 'selecting text shows the comment button');
 
+const coldBody = new El('div');
+Object.assign(coldBody, { ownerDocument: editorDocument, nodeType: 1 });
+const coldStore = new CommentStore(panelFs, { debounceMs: 1000 });
+registerCommentStore(coldStore);
+const coldEditor = new EditorView({
+	parent: coldBody as unknown as HTMLElement,
+	state: EditorState.create({
+		doc: panelNote,
+		extensions: [
+			editorInfoField.init(() => ({ file: { path: 'notes/demo.md' } }) as never),
+			commentsCmExtension({
+				settings: { editorWorkbench: { highlightEnabled: true, popoverEnabled: true } },
+			} as never),
+		],
+	}),
+});
+assert.equal(coldBody.querySelector('.apex-comment-hl'), null, 'highlight waits until the sidecar is loaded');
+await coldStore.loadFile('notes/demo.md');
+flushFrames();
+assert.ok(coldBody.querySelector('.apex-comment-hl'), 'loading the sidecar paints the highlight without reopening the note');
+coldEditor.destroy();
+
 function walk(dir: string): string[] {
 	const out: string[] = [];
 	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -308,6 +341,13 @@ const editorSource = fs.readFileSync(path.join(root, 'src/editor-view/view/edito
 assert.match(editorSource, /EDITOR_VIEW_TYPE = 'apex-editor-view'/);
 const terminalSource = fs.readFileSync(path.join(root, 'src/terminal-agent/view/terminal-view.ts'), 'utf8');
 assert.match(terminalSource, /TERMINAL_VIEW_TYPE = 'terminal-view'/);
+
+const commentCss = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+const popoverAt = commentCss.indexOf('.apex-comment-popover {');
+assert.equal(popoverAt >= 0, true);
+const popoverRule = commentCss.slice(popoverAt, commentCss.indexOf('}', popoverAt));
+assert.equal(popoverRule.includes('var(--layer-popover, 30)'), true);
+assert.equal(popoverRule.includes('z-index: 1000'), false);
 
 console.log('verify-editor-comments: ok');
 }

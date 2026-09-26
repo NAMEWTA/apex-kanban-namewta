@@ -84,6 +84,7 @@ export class TerminalView extends ItemView {
       this.initResolve = resolve;
       this.initReject = reject;
     });
+    void this.initPromise.catch(() => undefined);
   }
 
   getViewType(): string { return TERMINAL_VIEW_TYPE; }
