@@ -10,6 +10,7 @@ Open this file only when you changed an invariant, or when you are editing the s
 | Rules that apply to every edit, and the `pnpm run build` / `pnpm run lint` gate | `SKILL.md` |
 | Import matrix, lifecycle, folder map, command homes, settings pages, i18n edit steps, persisted names | `references/architecture.md` |
 | Obsidian API, eslint severity, DOM, CSS | `references/obsidian-api.md` |
+| Preact leaf runtime, popout roots, and the leaf visual scale | `../view-render/` |
 | Comment sidecars, anchors, comment tests | `references/editor-comments.md` |
 | What the scripts do, which `test:*` to run, CI, version bump, release workflow | `references/build-and-release.md` |
 | This map, and how to revise the skill | this file |

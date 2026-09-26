@@ -13,7 +13,7 @@ Generic guides that delete `display()` once `minAppVersion` is 1.13 or newer do 
 | `this.registerEvent(app.vault.on / workspace.on / …)` | Subscribe and forget, or only `off()` in `onunload` if `registerEvent` can do it |
 | `registerDomEvent` on the plugin or the owning `Component` | `addEventListener` now and `removeEventListener` later on `activeDocument` — focus may have moved, so you remove it from a different document |
 | `registerInterval` for periodic work | A bare interval that survives plugin unload |
-| Return views from the `registerView` factory | Store `ItemView` instances on the plugin |
+| Return views from the `registerView` factory | Store `ItemView` instances on the plugin. The window host in `view-render` is the exception, and unload clears it |
 | Let Obsidian detach leaves | `detachLeavesOfType()` in `onunload` |
 
 `activeDocument` and `activeWindow` follow focus. Capture the document in a local if setup and cleanup must hit the same one.

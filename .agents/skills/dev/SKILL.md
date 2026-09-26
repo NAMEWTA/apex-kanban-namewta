@@ -28,6 +28,7 @@ This skill is for this repository only. It adapts the Obsidian plugin rules name
 |---|---|
 | Move files, add a product, add a command, add UI copy, or change settings pages | [references/architecture.md](references/architecture.md) |
 | Call the Obsidian API, or edit settings UI, CSS, or DOM | [references/obsidian-api.md](references/obsidian-api.md) |
+| Render a product surface inside a leaf | [../view-render/SKILL.md](../view-render/SKILL.md) |
 | Touch comments, highlights, or `.apex-editor/` | [references/editor-comments.md](references/editor-comments.md) |
 | Build, test, bump a version, or release | [references/build-and-release.md](references/build-and-release.md) |
 | Change the identity table, an import boundary, a settings product, the i18n home, a test entry, or the release path | [references/skill-maintenance.md](references/skill-maintenance.md) |
